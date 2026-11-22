@@ -1,75 +1,84 @@
-# Essential JS 2 QuickStart
+# TypeScript Pivot Table with Advanced Server Configuration
 
-This project is a skeleton application used to create [Essential JS 2](https://www.syncfusion.com/products/essential-js2) web application.
+This quick-start sample connects a TypeScript Pivot Table to the ASP.NET Core Advanced Server Configuration application.
 
->This application uses the latest version of the [webpack-cli](https://webpack.js.org/api/cli/#commands). It requires node `v14.15.0` or higher.
+The server loads JSON, CSV, PostgreSQL, or SQLite data by using configured indexes. The Pivot Table sends its report and actions to `/api/pivot/post`.
 
-## Getting Started
+## Project prerequisites
 
-To get started you need to clone the `ej2-quickstart` repository and navigate to `ej2-quickstart` location.
+Install the following before running the sample:
 
+- Git
+- Node.js
+- npm
+- TypeScript
+- Visual Studio 2022 or Visual Studio Code
+- .NET 10 SDK
+
+## How to run this application
+
+### 1. Clone the repository
+
+```sh
+git clone https://github.com/SyncfusionExamples/syncfusion-pivot-table-advanced-server-configuration.git
+cd syncfusion-pivot-table-advanced-server-configuration
 ```
-git clone https://github.com/syncfusion/ej2-quickstart.git quickstart
-cd quickstart
+
+### 2. Run the server application
+
+Restore and start the `PivotController` project:
+
+```sh
+dotnet restore PivotController/PivotController.csproj
+dotnet run --project PivotController/PivotController.csproj
 ```
 
-## Installing
+By default, the sample uses `http://localhost:7800`. Verify the configured indexes at:
 
-We can get all the Essential JS 2 components in a single npm package [`ej2`](https://www.npmjs.com/package/@syncfusion/ej2).
-
-We already configure the required packages in the `package.json` file.
-
-You can run the below command to install all dependent packages related to this seed project.
-
+```text
+http://localhost:7800/api/indexes
 ```
+
+Configure JSON, CSV, or database sources in `PivotController/appsettings.json` before starting the server.
+
+### 3. Connect the TypeScript Pivot Table
+
+The sample sets the Pivot Table to server mode in `src/app/app.ts`:
+
+```ts
+const pivotObj: PivotView = new PivotView({
+    dataSourceSettings: {
+        url: 'http://localhost:7800/api/pivot/post',
+        mode: 'Server',
+        type: 'JSON',
+        rows: [{ name: 'Sector' }],
+        columns: [{ name: 'EnerType', caption: 'Energy Source' }],
+        values: [
+            { name: 'PowUnits', caption: 'Power Units' },
+            { name: 'ProCost', caption: 'Production Cost' }
+        ]
+    },
+    height: 500,
+    width: 1000,
+    showGroupingBar: true,
+    showFieldList: true
+});
+
+pivotObj.appendTo('#PivotGrid');
+```
+
+To use another configured index, add the index name to the endpoint:
+
+```ts
+url: 'http://localhost:7800/api/pivot/post?index=Data-Csv'
+```
+
+If HTTPS or a different server port is enabled, update the endpoint URL with the active server address.
+
+### 4. Run the TypeScript sample
+
+```sh
+cd Samples/TypeScript
 npm install
-```
-
-## Testing
-
-This application is preconfigured with End-to-End testing and the test case is written in Jasmine.
-
-We run the test scripts with [Protractor](http://www.protractortest.org/#/) end-to-end test runner. The test case file can be found in the `e2e` folder.
-
-Protractor can interact with our web application and verify the test scripts.
-
-We have to install WebDriver and also need to ensure it is updated. Open a separate terminal and run the below npm script.
-
-```
-npm run update-webdriver
-```
-
-Open another terminal and run the below npm script. It will start web server to serve our application.
-
-```
-npm run serve
-```
-
-Once the web server is up and running, we can run the end-to-end tests using the below npm script
-
-```
-npm run test
-```
-
-> **Note:** Since Protractor is using the Selenium Standalone Server, the Java Development Kit (JDK) need to be installed in your local machine.
-
-If JDK is not installed in your local machine, you can download it from [here](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
-
-## Running
-
-The application is configured with [webpack-dev-server](https://webpack.js.org/configuration/dev-server/#devserver), so it will serve the web application in your default browser.
-
-We have used [Webpack](https://github.com/webpack/webpack) for module loading.
-
-You can use the below npm script to run the web application.
-
-```
 npm run start
 ```
-
-## Resources
-
-You can also refer the below resources to know more details about Essential JS 2 components.
-
-* [Pure JS Demos](http://ej2.syncfusion.com/demos/)
-* [Pure JS Documentation](http://ej2.syncfusion.com/documentation/)

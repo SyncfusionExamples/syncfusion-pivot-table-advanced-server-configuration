@@ -1,75 +1,79 @@
-# React + TypeScript + Vite
+# React Pivot Table with Advanced Server Configuration
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This quick-start sample connects a React + TypeScript Pivot Table to the ASP.NET Core Advanced Server Configuration application.
 
-Currently, two official plugins are available:
+The server loads JSON, CSV, PostgreSQL, or SQLite data by using configured indexes. The React Pivot Table sends its report and actions to `/api/pivot/post`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Project prerequisites
 
-## React Compiler
+Install the following before running the sample:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Git
+- Node.js
+- npm
+- Visual Studio 2022 or Visual Studio Code
+- .NET 10 SDK
 
-## Expanding the ESLint configuration
+## How to run this application
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 1. Clone the repository
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+git clone https://github.com/SyncfusionExamples/syncfusion-pivot-table-advanced-server-configuration.git
+cd syncfusion-pivot-table-advanced-server-configuration
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Run the server application
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Open the repository in Visual Studio or Visual Studio Code.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Restore and start the `PivotController` project:
 
+```sh
+dotnet restore PivotController/PivotController.csproj
+dotnet run --project PivotController/PivotController.csproj
 ```
+
+By default, the sample uses `http://localhost:7800`. Verify the server indexes at:
+
+```text
+http://localhost:7800/api/indexes
+```
+
+Configure data sources in `PivotController/appsettings.json` before starting the server. The sample includes JSON and CSV indexes.
+
+### 3. Connect the React Pivot Table
+
+The sample sets the Pivot Table to server mode in `src/App.tsx`:
+
+```ts
+const dataSourceSettings: DataSourceSettingsModel = {
+    url: 'http://localhost:7800/api/pivot/post',
+    mode: 'Server',
+    type: 'JSON',
+    rows: [{ name: 'Sector' }],
+    columns: [{ name: 'EnerType', caption: 'Energy Source' }],
+    values: [
+        { name: 'PowUnits', caption: 'Power Units' },
+        { name: 'ProCost', caption: 'Production Cost' }
+    ]
+};
+```
+
+To use another configured index, add the index name to the endpoint:
+
+```ts
+url: 'http://localhost:7800/api/pivot/post?index=Data-Csv'
+```
+
+If HTTPS or a different server port is enabled, update the endpoint URL with the active server address.
+
+### 4. Run the React sample
+
+```sh
+cd Samples/React
+npm install
+npm run dev
+```
+
+Open the local URL shown in the terminal, usually `http://localhost:5173`.

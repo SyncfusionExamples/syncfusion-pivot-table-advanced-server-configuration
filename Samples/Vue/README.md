@@ -1,24 +1,77 @@
-# quickstart
+# Vue Pivot Table with Advanced Server Configuration
 
-## Project setup
+This quick-start sample connects a Vue Pivot Table to the ASP.NET Core Advanced Server Configuration application.
+
+The server loads JSON, CSV, PostgreSQL, or SQLite data by using configured indexes. The Vue Pivot Table sends its report and actions to `/api/pivot/post`.
+
+## Project prerequisites
+
+Install the following before running the sample:
+
+- Git
+- Node.js
+- npm
+- Visual Studio 2022 or Visual Studio Code
+- .NET 10 SDK
+
+## How to run this application
+
+### 1. Clone the repository
+
+```sh
+git clone https://github.com/SyncfusionExamples/syncfusion-pivot-table-advanced-server-configuration.git
+cd syncfusion-pivot-table-advanced-server-configuration
 ```
+
+### 2. Run the server application
+
+Restore and start the `PivotController` project:
+
+```sh
+dotnet restore PivotController/PivotController.csproj
+dotnet run --project PivotController/PivotController.csproj
+```
+
+By default, the sample uses `http://localhost:7800`. Verify the configured indexes at:
+
+```text
+http://localhost:7800/api/indexes
+```
+
+Configure JSON, CSV, or database sources in `PivotController/appsettings.json` before starting the server.
+
+### 3. Connect the Vue Pivot Table
+
+The sample sets the Pivot Table to server mode in `src/App.vue`:
+
+```ts
+dataSourceSettings: {
+    url: 'http://localhost:7800/api/pivot/post',
+    mode: 'Server',
+    type: 'JSON',
+    rows: [{ name: 'Sector' }],
+    columns: [{ name: 'EnerType', caption: 'Energy Source' }],
+    values: [
+        { name: 'PowUnits', caption: 'Power Units' },
+        { name: 'ProCost', caption: 'Production Cost' }
+    ]
+}
+```
+
+To use another configured index, add the index name to the endpoint:
+
+```text
+http://localhost:7800/api/pivot/post?index=Data-Csv
+```
+
+If HTTPS or a different server port is enabled, update the endpoint URL with the active server address.
+
+### 4. Run the Vue sample
+
+```sh
+cd Samples/Vue
 npm install
-```
-
-### Compiles and hot-reloads for development
-```
 npm run serve
 ```
 
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+Open `http://localhost:8080/` in the browser.

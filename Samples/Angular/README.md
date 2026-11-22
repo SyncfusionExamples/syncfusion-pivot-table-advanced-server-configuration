@@ -1,59 +1,78 @@
-# SyncfusionAngularApp
+# Angular Pivot Table with Advanced Server Configuration
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.15.
+This quick-start sample connects an Angular Pivot Table to the ASP.NET Core Advanced Server Configuration application.
 
-## Development server
+The server loads JSON, CSV, PostgreSQL, or SQLite data by using configured indexes. The Angular Pivot Table sends its report and actions to `/api/pivot/post`.
 
-To start a local development server, run:
+## Project prerequisites
 
-```bash
-ng serve
+Install the following before running the sample:
+
+- Git
+- Node.js
+- npm
+- Angular CLI
+- Visual Studio 2022 or Visual Studio Code
+- .NET 10 SDK
+
+## How to run this application
+
+### 1. Clone the repository
+
+```sh
+git clone https://github.com/SyncfusionExamples/syncfusion-pivot-table-advanced-server-configuration.git
+cd syncfusion-pivot-table-advanced-server-configuration
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### 2. Run the server application
 
-## Code scaffolding
+Restore and start the `PivotController` project:
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```sh
+dotnet restore PivotController/PivotController.csproj
+dotnet run --project PivotController/PivotController.csproj
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+By default, the sample uses `http://localhost:7800`. Verify the configured indexes at:
 
-```bash
-ng generate --help
+```text
+http://localhost:7800/api/indexes
 ```
 
-## Building
+Configure JSON, CSV, or database sources in `PivotController/appsettings.json` before starting the server.
 
-To build the project run:
+### 3. Connect the Angular Pivot Table
 
-```bash
-ng build
+The sample sets the Pivot Table to server mode in `src/app/app.ts`:
+
+```ts
+this.dataSourceSettings = {
+    url: 'http://localhost:7800/api/pivot/post',
+    mode: 'Server',
+    type: 'JSON',
+    rows: [{ name: 'Sector' }],
+    columns: [{ name: 'EnerType', caption: 'Energy Source' }],
+    values: [
+        { name: 'PowUnits', caption: 'Power Units' },
+        { name: 'ProCost', caption: 'Production Cost' }
+    ]
+};
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+To use another configured index, add the index name to the endpoint:
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
+```ts
+url: 'http://localhost:7800/api/pivot/post?index=Data-Csv'
 ```
 
-## Running end-to-end tests
+If HTTPS or a different server port is enabled, update the endpoint URL with the active server address.
 
-For end-to-end (e2e) testing, run:
+### 4. Run the Angular sample
 
-```bash
-ng e2e
+```sh
+cd Samples/Angular
+npm install
+npm start
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Open `http://localhost:4200/` in the browser.
