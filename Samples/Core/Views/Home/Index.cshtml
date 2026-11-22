@@ -1,0 +1,22 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+@model PivotModel;
+
+<ejs-pivotview id="PivotView" height="300" showGroupingBar="true" showFieldList="true">
+    <e-datasourcesettings url="http://localhost:7800/api/pivot/post" mode="Server">
+        <e-rows>
+            <e-field name="Sector"></e-field>
+        </e-rows>
+        <e-columns>
+            <e-field name="EnerType" caption="Energy Source"></e-field>
+        </e-columns>
+        <e-values>
+            <e-field name="PowUnits" caption="Power Units"></e-field>
+        </e-values>
+    </e-datasourcesettings>
+</ejs-pivotview>
+
+<script>
+</script>

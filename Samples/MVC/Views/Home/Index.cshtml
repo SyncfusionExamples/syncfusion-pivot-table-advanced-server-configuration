@@ -1,0 +1,29 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+@using Syncfusion.EJ2.PivotView
+
+@Html.EJS().PivotView("PivotView").Height(500).Width(800).AllowCalculatedField(true).ShowGroupingBar(true).ShowFieldList(true).DataSourceSettings(dataSource => dataSource
+        .Url("http://localhost:7800/api/pivot/post")
+        .Mode(Syncfusion.EJ2.PivotView.RenderMode.Server)
+        .Type(Syncfusion.EJ2.PivotView.DataSourceType.JSON)
+        .Rows(rows =>
+        {
+            rows.Name("Sector").Add();
+        })
+        .Columns(columns =>
+        {
+            columns.Name("EnerType").Caption("Energy Source").Add();
+        })
+        .Values(values =>
+        {
+            values.Name("PowUnits").Caption("Power Units").Add();
+        })
+    ).Render()
+<style>
+    #pivotview {
+        width: 100%;
+        height: 100%;
+    }
+</style>
