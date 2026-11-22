@@ -1,528 +1,456 @@
-# Server-Side Pivot Engine
+# Advanced Server Configuration for Syncfusion Pivot Table
 
-This project demonstrates a Syncfusion EJ2 Pivot Table connected to a server-side
-pivot engine. The browser sends the Pivot Table report and user actions to the
-ASP.NET Core server. The server loads data from a configured index, performs
-pivoting and aggregation, and returns the result to the client. The browser does
-not need to download the entire data source just to render the pivot view.
+**Advanced Server Configuration** lets you connect a Syncfusion Pivot Table to JSON, CSV, PostgreSQL, and SQLite data sources through an ASP.NET Core server.
 
-The **Custom Data Server** is the optional server configuration layer: it lets
-you define data sources and control indexing, storage, database timeouts,
-security, HTTPS, and report sharing in `PivotController/appsettings.json`.
-Configure only the sections your deployment needs.
+It helps you manage data sources as named indexes and control loading, refreshing, security, caching, and report sharing from one configuration file.
 
-## Contents
+---
 
-- [How the server-side pivot works](#how-the-server-side-pivot-works)
-- [Key capabilities](#key-capabilities)
-- [Requirements and quick start](#requirements-and-quick-start)
-- [Project structure](#project-structure)
-- [Connect the sample client](#connect-the-sample-client)
-- [Configure the Custom Data Server](#configure-the-custom-data-server)
-  - [1. Define an index](#1-define-an-index)
-  - [2. Configure general server settings](#2-configure-general-server-settings)
-  - [3. Configure data storage and caching](#3-configure-data-storage-and-caching)
-  - [4. Configure database query timeouts](#4-configure-database-query-timeouts)
-  - [5. Configure security and browser origins](#5-configure-security-and-browser-origins)
-  - [6. Configure HTTPS](#6-configure-https)
-  - [7. Configure report sharing](#7-configure-report-sharing)
-  - [8. Configure ASP.NET Core host logging](#8-configure-aspnet-core-host-logging)
-- [Configuration persistence and APIs](#configuration-persistence-and-apis)
-- [Troubleshooting](#troubleshooting)
+## 📋 Table of Contents
 
-## How the server-side pivot works
+- [Overview](#-overview)
+- [Key Benefits](#-key-benefits)
+- [Prerequisites](#-prerequisites)
+- [Quick Start](#-quick-start)
+- [Configuration Setup](#-configuration-setup)
+- [Client-side Integration](#-client-side-integration)
+- [Additional Samples](#-additional-samples)
+- [Licensing](#-licensing)
+- [Related Documentation](#-related-documentation)
 
-The request flow is:
+---
 
-1. The client Pivot Table sends its report settings and requested action to
-   `POST /api/pivot/post`.
-2. The server selects an index, loads its data source, and applies its field
-   mappings.
-3. The Syncfusion Pivot Engine processes the report on the server.
-4. The server returns the pivot result to the browser. Actions such as field
-   member retrieval, drill-through, and export are also handled by this endpoint.
+## 🎯 Overview
 
-The client and server have separate responsibilities:
+Advanced Server Configuration is an optional setup for the ASP.NET Core `PivotController` sample.
 
-| Part | Responsibility |
-|---|---|
-| Client Pivot Table | Displays the result and sends the report layout, filters, and user actions. |
-| PivotController | Receives the Pivot Table request and routes it to the selected index. |
-| Custom Data Server | Defines indexes and controls how data is loaded, cached, protected, and served. |
-| Pivot Engine | Performs server-side pivot calculations and returns the response. |
+Instead of adding data directly to the Pivot Table, you register each data source as an index. The Pivot Table sends its report and actions to `/api/pivot/post`, and the server returns the processed result.
 
-Drill-through can request relevant source records; the regular pivot response is
-the server-computed pivot result rather than an initial download of the complete
-dataset.
+You can configure:
 
-## Key capabilities
+- JSON, CSV, PostgreSQL, and SQLite data sources
+- A default index
+- Automatic data refresh
+- JSON and CSV field types
+- Server response caching
+- Database query limits
+- HTTPS and Basic Authentication
+- Browser CORS settings
+- Saved Pivot Table reports
 
-- Server-side Pivot Engine processing through `POST /api/pivot/post`.
-- JSON, CSV, PostgreSQL, and SQLite data indexes.
-- Per-index reload, field mapping, enable/disable, and status management.
-- Configurable retry behavior, response caching, and database query timeouts.
-- Optional Basic Authentication, CORS restrictions, HTTPS, and report sharing.
+---
 
-## Requirements and quick start
+## ✨ Key Benefits
 
-- .NET 10 SDK
-- Python 3 (only needed to serve the static browser sample), or another static
-  web server
-- A configured JSON/CSV data file, or a PostgreSQL/SQLite database
-- Internet access for the Syncfusion EJ2 assets referenced by the sample page
+- **Easy data integration:** Use local files or database sources.
+- **Flexible configuration:** Connect more than one data source.
+- **Automatic updates:** Reload configured indexes at set intervals.
+- **Better field handling:** Map JSON and CSV fields to the correct data type.
+- **Improved security:** Control API access and browser origins.
+- **Lower database load:** Limit slow queries and cache repeated responses.
+- **Runtime control:** Enable, disable, reload, or delete indexes through APIs.
 
-From the repository root, start the server:
+---
+
+## 📦 Prerequisites
+
+Before using Advanced Server Configuration:
+
+- Install the .NET 10 SDK.
+- Use the `PivotController` ASP.NET Core application.
+- Add the Syncfusion EJ2 Pivot Table packages.
+- Add a valid Syncfusion license.
+- Prepare a JSON file, CSV file, PostgreSQL database, or SQLite database.
+
+For database sources:
+
+- Use a connection string or a named connection string.
+- Use a read-only `SELECT` or `WITH` query.
+- Do not include multiple statements or write operations in the query.
+- Keep database passwords out of source control.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Configure an index
+
+Open `PivotController/appsettings.json` and add an index under `DataServer:Indexes`.
+
+```json
+{
+  "DataServer": {
+    "DefaultIndexId": "Sales-Json",
+    "Indexes": [
+      {
+        "Index": "Sales-Json",
+        "Name": "Sales Analysis",
+        "SourceType": "Json",
+        "SourcePath": "sales-analysis.json",
+        "Enabled": true,
+        "AutoReload": true,
+        "ReloadIntervalMinutes": 20,
+        "MappingEnabled": false,
+        "FieldMappings": []
+      }
+    ]
+  }
+}
+```
+
+### 2. Start the server
 
 ```powershell
 dotnet restore PivotController\PivotController.csproj
 dotnet run --project PivotController\PivotController.csproj
 ```
 
-In a second terminal, serve the client sample:
+The sample server uses port `7800` by default.
 
-```powershell
-python -m http.server 5500 --directory Sample
-```
+### 3. Verify the indexes
 
-Open `http://localhost:5500/pivot.html`. The sample server listens on port
-`8765` by default; the client calls `http://localhost:8765/api/pivot/post`.
-Because the browser page and API use different ports, the sample CORS setting
-allows the local page to call the API.
-
-To verify the server has loaded the configured indexes, open
-`http://localhost:8765/api/indexes`. The response should include the enabled
-`Sales-Json` index and its status.
-
-## Project structure
+Open:
 
 ```text
-PivotController/
-  Controllers/                 Pivot endpoint
-  Configuration/               Indexes, settings, and configuration APIs
-  Data/Providers/              JSON, CSV, PostgreSQL, and SQLite providers
-  Indexing/                    Index lifecycle and response caching
-  DataSource/                  Sample JSON and CSV files
-  appsettings.json             Default server and data-index configuration
-Sample/
-  pivot.html                   Browser sample page
-  pivot.js                     Server-mode Pivot Table setup
-README.md                      This guide
+http://localhost:7800/api/indexes
 ```
 
-## Connect the sample client
+The response shows whether each index is `Ready`, `Refreshing`, `Failed`, or `Disabled`.
 
-The example client files are `Sample/pivot.html` and `Sample/pivot.js`. The
-essential server-mode settings are:
+---
 
-```javascript
-var pivotGridObj = new ej.pivotview.PivotView({
-    dataSourceSettings: {
-        url: 'http://localhost:8765/api/pivot/post',
-        mode: 'Server',
-        type: 'JSON',
-        enableSorting: true
-    },
-    enableVirtualization: true,
-    enableValueSorting: true,
-    allowCalculatedField: true,
-    showGroupingBar: true,
-    showFieldList: true,
-    height: 500,
-    width: 1000
-});
-pivotGridObj.appendTo('#PivotView');
-```
+## 🛠️ Configuration Setup
 
-This matches the current sample: the URL points to the server endpoint and no
-index name is set in the client. The server therefore selects
-`DataServer:DefaultIndexId`. The Field List lets users arrange the available
-fields. To define an initial report in code, add field names that exist in the
-selected index, for example:
+### 📂 JSON index
 
-```javascript
-rows: [{ name: 'Sector', caption: 'Sector' }],
-columns: [{ name: 'EnerType', caption: 'Energy Type' }],
-values: [
-    { name: 'PowUnits', caption: 'Power Units' },
-    { name: 'ProCost', caption: 'Production Cost' }
-]
-```
+Use `SourceType: "Json"` for a JSON file.
 
-Those fields are present in the sample `Sales-Json` data. If a browser page is
-served from the same origin as the API, use a relative endpoint such as
-`/api/pivot/post`. If the page and API have different origins, configure
-`Security:CORS:AllowOrigin` for the page's origin as described below.
-
-## Configure the Custom Data Server
-
-Edit `PivotController/appsettings.json`. The following sections are explained
-in the order you would typically configure them. JSON examples are snippets to
-merge into that file; keep its other ASP.NET Core settings as needed.
-
-### 1. Define an index
-
-An index connects a name used by the server to a file or database source. Start
-with an index for the included JSON sample:
-
-```json
-"DataServer": {
-  "DefaultIndexId": "Sales-Json",
-  "Indexes": [
-    {
-      "Index": "Sales-Json",
-      "Name": "Sales analysis",
-      "SourceType": "Json",
-      "SourcePath": "sales-analysis.json",
-      "Enabled": true,
-      "AutoReload": true,
-      "ReloadIntervalMinutes": 20,
-      "MappingEnabled": false,
-      "FieldMappings": []
-    }
-  ]
-}
-```
-
-`SourcePath` is relative to `General:DataFolder` unless it is an absolute path.
-For the default `DataFolder` value, put `sales-analysis.json` in
-`PivotController/DataSource`. JSON data must be an array of objects. Index names
-must be unique (case-insensitive), 1–64 characters, and contain only letters,
-digits, `.`, `_`, or `-`.
-
-| Option | What it does |
-|---|---|
-| `DefaultIndexId` | Selects the index when the client does not send an index name. It must match an enabled index. |
-| `Indexes` | Lists the configured data sources. |
-| `Index` | Stable identifier used by requests and index management APIs. |
-| `Name` | Human-readable index description. |
-| `SourceType` | `Json`, `Csv`, `PostgreSQL`, or `Sqlite`. |
-| `SourcePath` | File path for JSON/CSV indexes. Required for those source types. |
-| `Enabled` | Enables or disables the index. Disabled indexes cannot serve pivot requests. |
-| `AutoReload` | Reloads the source on a schedule when `true`. |
-| `ReloadIntervalMinutes` | Reload interval; must be greater than zero when auto-reload is enabled. |
-| `MappingEnabled` / `FieldMappings` | Optionally sets source field types explicitly; see the example below. |
-
-**What changes in the client?** With the sample URL above, no client index
-parameter is required: `Sales-Json` is selected by default. The fields available
-in the client Field List come from that source. If you change the selected
-source, update any `rows`, `columns`, or `values` field names to fields in the
-new source. The client may explicitly override the default with `?index=OtherIndex`,
-but the included sample intentionally leaves the index selection to the server.
-
-#### CSV source options
-
-For CSV, set `SourceType` to `Csv` and set the parsing options to match the file:
+The file must contain an array of records.
 
 ```json
 {
-  "Index": "Products-Csv",
-  "Name": "Product data",
-  "SourceType": "Csv",
-  "SourcePath": "products.csv",
-  "CsvDelimiter": ";",
-  "CsvDecimalSeparator": ",",
-  "CsvThousandsSeparator": ".",
-  "Enabled": false,
-  "AutoReload": false,
-  "ReloadIntervalMinutes": 0,
-  "MappingEnabled": false,
-  "FieldMappings": []
+  "Index": "Sales-Json",
+  "Name": "Sales Analysis",
+  "SourceType": "Json",
+  "SourcePath": "sales-analysis.json",
+  "Enabled": true,
+  "AutoReload": true,
+  "ReloadIntervalMinutes": 20
 }
 ```
 
-`CsvDelimiter` is a column separator such as `,`, `;`, or `|`.
-`CsvDecimalSeparator` accepts `Dot`/`.` or `Comma`/`,`; `CsvThousandsSeparator`
-accepts `Comma`/`,`, `Dot`/`.`, or `Space`/` `. Enable the index before selecting
-it as the default. CSV files need a header row.
+### 📊 CSV index
 
-#### Database source options
-
-The included database providers are PostgreSQL and SQLite. A database index
-requires a database type, connection, and one read-only `SELECT` or `WITH`
-query. The connection string may be written inline or referenced by name; the
-inline value takes precedence.
+Use `SourceType: "Csv"` for a CSV file with a header row.
 
 ```json
-"ConnectionStrings": {
-  "SalesDatabase": "Host=localhost;Port=5432;Database=sales;Username=YOUR_USER;Password=YOUR_PASSWORD"
-},
-"DataServer": {
-  "DefaultIndexId": "Sales-Database",
-  "Indexes": [
-    {
-      "Index": "Sales-Database",
-      "Name": "Sales database",
-      "SourceType": "PostgreSQL",
-      "DatabaseType": "PostgreSQL",
-      "ConnectionStringName": "SalesDatabase",
-      "Query": "SELECT * FROM salesdata",
-      "Enabled": true
-    }
+{
+  "Index": "Data-Csv",
+  "Name": "Sales CSV",
+  "SourceType": "Csv",
+  "SourcePath": "data.csv",
+  "CsvDelimiter": ";",
+  "CsvDecimalSeparator": "Comma",
+  "CsvThousandsSeparator": "Dot",
+  "Enabled": true
+}
+```
+
+| CSV option | Description |
+|---|---|
+| `CsvDelimiter` | Character that separates columns |
+| `CsvDecimalSeparator` | `Dot` or `Comma` |
+| `CsvThousandsSeparator` | `Comma`, `Dot`, or `Space` |
+
+### 🗄️ Database index
+
+Use `SourceType: "Database"` for a database.
+
+```json
+{
+  "Index": "Sales-Db",
+  "Name": "PostgreSQL Sales",
+  "SourceType": "Database",
+  "DatabaseType": "PostgreSQL",
+  "ConnectionString": "Host=localhost;Port=5432;Database=salesdb;Username=YOUR_USER;Password=YOUR_PASSWORD",
+  "Query": "SELECT * FROM salesdata",
+  "Enabled": true
+}
+```
+
+Supported database values include:
+
+- `PostgreSQL`
+- `Sqlite`
+- `MySql`
+- `MariaDB`
+- `MSSQL`
+- `Oracle`
+
+The sample controller includes PostgreSQL and SQLite providers. Other databases require a matching provider implementation.
+
+Test an existing database index:
+
+```text
+POST /api/indexes/{index}/test-connection
+```
+
+### 🔧 Common index options
+
+| Option | Description |
+|---|---|
+| `DefaultIndexId` | Index used when the client request has no index |
+| `Index` | Unique index name |
+| `Name` | Readable index name |
+| `SourceType` | `Json`, `Csv`, or `Database` |
+| `SourcePath` | JSON or CSV file path |
+| `Enabled` | Enables or disables the index |
+| `AutoReload` | Reloads the index automatically |
+| `ReloadIntervalMinutes` | Automatic reload interval |
+| `MappingEnabled` | Enables custom field mappings |
+| `FieldMappings` | Field names and field types |
+
+### 🧩 Field mapping
+
+Field mapping helps when a JSON or CSV field is detected with the wrong type.
+
+```json
+{
+  "MappingEnabled": true,
+  "FieldMappings": [
+    { "FieldName": "ProCost", "Type": "Number" },
+    { "FieldName": "Date", "Type": "Date" },
+    { "FieldName": "Sector", "Type": "String" }
   ]
 }
 ```
 
-Use the corresponding SQLite connection string and `DatabaseType` for SQLite.
-SQL Server, MySQL/MariaDB, and Oracle require provider packages that are not
-included in this project. Keep real database credentials in deployment secrets
-or environment-specific configuration; do not commit them.
+Available field types:
 
-**What changes in the client?** The client still posts to the same pivot
-endpoint. It does not connect directly to PostgreSQL or SQLite. Use the field
-names returned by the query when defining the Pivot Table layout.
+- `Number`
+- `Date`
+- `String`
 
-#### Field mappings
+Field mapping APIs:
 
-Mapping is optional. Enable it when inferred field types do not match the data:
-
-```json
-"MappingEnabled": true,
-"FieldMappings": [
-  { "FieldName": "Price", "Type": "Number" },
-  { "FieldName": "OrderDate", "Type": "Date" },
-  { "FieldName": "ProductName", "Type": "String" }
-]
-```
-
-Types are `Number`, `Date`, and `String`; each field name must exist in the
-source. The server applies these types while processing client reports, which
-affects operations such as aggregation, sorting, and grouping. The client uses
-the same field names; it does not need to duplicate the mapping in its
-`dataSourceSettings`.
-
-### 2. Configure general server settings
-
-```json
-"General": {
-  "Port": 8765,
-  "MinimumLogLevel": "Info",
-  "DataFolder": "DataSource"
-}
-```
-
-| Option | What it does |
+| Endpoint | Purpose |
 |---|---|
-| `Port` | HTTP listener port, from 1 to 65535. Changing it requires a server restart. |
-| `MinimumLogLevel` | Server logging threshold: `Info`, `Warn`, `Error`, or `Fatal`. Applies at runtime. |
-| `DataFolder` | Root for source files, index definitions, persisted settings, and related server data. Relative paths resolve from the application content root; changing it requires a restart. |
+| `GET /api/indexes/{index}/fields` | View field types |
+| `PUT /api/indexes/{index}/fields/{fieldName}` | Set a field type |
+| `DELETE /api/indexes/{index}/fields/{fieldName}` | Remove a field mapping |
 
-**What changes in the client?** When `Port` changes, update the host and port
-in `dataSourceSettings.url`. `DataFolder` and `MinimumLogLevel` are server-side
-only; they do not change the Pivot Table configuration. The default sample
-client URL corresponds to port `8765`.
+### ⚙️ Server settings
 
-### 3. Configure data storage and caching
+Configure the server in `appsettings.json`.
 
 ```json
-"DataStorage": {
-  "RetryAttempts": 3,
-  "CacheSizeLimit": 100,
-  "KeepDataOnRefresh": true,
-  "MaxCacheItemSizeBytes": 0
-}
-```
-
-| Option | What it does |
-|---|---|
-| `RetryAttempts` | Retries transient source-load failures; valid range is 0–30. |
-| `CacheSizeLimit` | Maximum cached pivot-engine responses per index. Least-recently-used entries are evicted; `0` disables response caching. |
-| `KeepDataOnRefresh` | Keeps the last successfully loaded data available if a refresh fails when `true`; otherwise the index can become unavailable. |
-| `MaxCacheItemSizeBytes` | Maximum estimated size of a cached data set. `0` means unlimited; an oversized data set is loaded but not cached. This limit applies when response caching is enabled. |
-
-**What changes in the client?** These options are transparent to the client:
-it continues sending requests to the same endpoint. They affect server load,
-memory use, and what happens during source refresh failures. Restart the server
-after changing cache limits.
-
-### 4. Configure database query timeouts
-
-These settings apply only to database-backed indexes:
-
-```json
-"DatabaseQuery": {
-  "CommandTimeoutEnabled": true,
-  "CommandTimeLimit": 150
-}
-```
-
-`CommandTimeoutEnabled` determines whether the Data Server applies its
-`CommandTimeLimit` or lets the database driver's timeout apply.
-`CommandTimeLimit` is measured in seconds; `0` means unlimited when the custom
-timeout is enabled, and negative values are invalid.
-
-**What changes in the client?** Nothing in the Pivot Table URL or report
-settings changes. A timed-out database request is returned as an API failure;
-the client should handle the failed request using its usual error handling.
-
-### 5. Configure security and browser origins
-
-For local development with authorization disabled:
-
-```json
-"Security": {
-  "Authorization": {
-    "Enabled": false,
-    "Username": "",
-    "Password": ""
+{
+  "General": {
+    "Port": 7800,
+    "MinimumLogLevel": "Info",
+    "DataFolder": "DataSource"
   },
-  "CORS": {
-    "AllowOrigin": "*"
+  "DataStorage": {
+    "RetryAttempts": 3,
+    "CacheSizeLimit": 100,
+    "KeepDataOnRefresh": true,
+    "MaxCacheItemSizeBytes": 0
+  },
+  "DatabaseQuery": {
+    "CommandTimeoutEnabled": true,
+    "CommandTimeLimit": 150
   }
 }
 ```
 
-For a protected deployment, set credentials and specify the exact browser origin:
+| Section | Purpose |
+|---|---|
+| `General` | Server port, log level, and data folder |
+| `DataStorage` | Retry and response cache settings |
+| `DatabaseQuery` | Database query timeout |
+
+### 🔐 Security, CORS, and HTTPS
+
+Basic Authentication and CORS help protect the server and control which websites can call it.
 
 ```json
-"Security": {
-  "Authorization": {
+{
+  "Security": {
+    "Authorization": {
+      "Enabled": true,
+      "Username": "YOUR_SERVER_USER",
+      "Password": "SET_A_SECRET"
+    },
+    "CORS": {
+      "AllowOrigin": "https://pivot.example.com"
+    }
+  }
+}
+```
+
+- Use `*` for CORS only when Basic Authentication is disabled.
+- Do not store real credentials in client-side code.
+- Use HTTPS for production applications.
+- Restart the server after changing HTTPS settings.
+
+Example HTTPS setting:
+
+```json
+{
+  "Https": {
     "Enabled": true,
-    "Username": "YOUR_SERVER_USER",
-    "Password": "SET_A_SECRET"
-  },
-  "CORS": {
-    "AllowOrigin": "https://pivot.example.com"
+    "PfxPath": "certificates/server.pfx",
+    "PfxPassword": "SET_A_SECRET",
+    "Protocols": "HTTP1_AND_HTTP2"
   }
 }
 ```
 
-When authorization is enabled, both credentials are required and `AllowOrigin`
-must contain one or more exact `http://` or `https://` origins, comma-separated.
-Do not use `*` with authorization enabled. An origin contains the scheme, host,
-and optional port, but not a path (for example `http://localhost:5500`).
-Authorization protects `/api/*`; CORS controls which browser origins may read
-the responses. CORS is enforced by browsers, not command-line clients.
+### 💾 Report sharing
 
-**What changes in the client?** For cross-origin browser use, set
-`AllowOrigin` to the page's exact origin. If authorization is enabled, requests
-must also carry valid Basic Authentication credentials. The current public
-sample does not include production credential handling; do not place production
-secrets in browser JavaScript. Prefer a trusted same-origin backend/proxy or an
-appropriate secured client integration.
-
-### 6. Configure HTTPS
-
-HTTPS is optional. When enabled, configure exactly one certificate source:
+Enable report sharing to save and retrieve Pivot Table reports.
 
 ```json
-"Https": {
-  "Enabled": true,
-  "PfxPath": "certificates/server.pfx",
-  "PfxPassword": "SET_A_SECRET",
-  "PemCertPath": null,
-  "PemKeyPath": null,
-  "StoreLocation": "CurrentUser",
-  "StoreName": "My",
-  "Thumbprint": null,
-  "SubjectName": null,
-  "Protocols": "HTTP1_AND_HTTP2"
-}
-```
-
-Choose one of these certificate approaches:
-
-| Approach | Settings |
-|---|---|
-| PFX | Set `PfxPath` and, if required, `PfxPassword`. |
-| PEM | Set both `PemCertPath` and `PemKeyPath`; a full-chain certificate file is supported. |
-| Certificate store | Set `Thumbprint` or `SubjectName`, and configure `StoreLocation` (`CurrentUser` or `LocalMachine`) and optionally `StoreName` (commonly `My`). |
-
-`Protocols` accepts `HTTP1`, `HTTP2`, or `HTTP1_AND_HTTP2`. The certificate
-must be available to the server and include its private key. Restart after
-changing HTTPS settings. Keep certificate passwords in a startup secret source;
-the settings API does not persist or return the PFX password.
-
-**What changes in the client?** Change the endpoint scheme to `https://` and use
-the HTTPS listener's port. The browser page should also be served over HTTPS;
-the configured certificate must be trusted by the browser. For cross-origin
-requests, the CORS origin must use the matching HTTPS scheme.
-
-### 7. Configure report sharing
-
-Report sharing is optional. It can expose report endpoints and save the client
-report configuration sent with pivot requests:
-
-```json
-"ReportSharingOptions": {
-  "EndpointEnabled": false,
-  "PathToFolder": "DataServer/reports",
-  "ReportExpirationTime": 0,
-  "MaxSizeOfFolder": 0,
-  "AutoDeletingEnabled": false
-}
-```
-
-| Option | What it does |
-|---|---|
-| `EndpointEnabled` | Enables report-sharing endpoints and automatic report saving from pivot requests. When disabled, report operations return 404. |
-| `PathToFolder` | Report storage folder. Relative paths resolve under `General:DataFolder`; absolute paths are allowed. |
-| `ReportExpirationTime` | Retention in minutes; `0` means reports do not expire. |
-| `MaxSizeOfFolder` | Storage quota in MB; `0` means unlimited. |
-| `AutoDeletingEnabled` | Allows eviction of the oldest reports to make room when the quota is reached. It does not control expiration cleanup. |
-
-**What changes in the client?** The client continues using
-`/api/pivot/post`; it does not have to call the report API for automatic saving.
-When enabled, the server saves the report configuration from pivot requests.
-Applications that need to list, retrieve, or delete shared reports can use the
-`/api/reportsharing/reports` endpoints.
-
-### 8. Configure ASP.NET Core host logging
-
-`Logging` and `AllowedHosts` are ASP.NET Core host settings, separate from the
-Data Server's `General` section:
-
-```json
-"Logging": {
-  "LogLevel": {
-    "Default": "Information",
-    "Microsoft.AspNetCore": "Warning"
+{
+  "ReportSharingOptions": {
+    "EndpointEnabled": false,
+    "PathToFolder": "DataServer/reports",
+    "ReportExpirationTime": 0,
+    "MaxSizeOfFolder": 0,
+    "AutoDeletingEnabled": false
   }
-},
-"AllowedHosts": "*"
+}
 ```
 
-The application uses its own console logger, whose threshold is controlled by
-`General:MinimumLogLevel`; `Logging:LogLevel` is retained as standard
-ASP.NET Core host configuration but is not the Data Server's primary logging
-control. `AllowedHosts` filters accepted host headers; replace `*` with the host
-names intended for a deployment.
-
-**What changes in the client?** No Pivot Table setting changes. If host filtering
-is restricted, make sure the API URL uses one of the allowed host names.
-
-## Configuration persistence and APIs
-
-Runtime configuration endpoints are available under `/api/config`:
-
-| Endpoint | Section |
+| Endpoint | Purpose |
 |---|---|
-| `GET/PUT /api/config/general` | General settings |
-| `GET/PUT /api/config/datastorage` | Data storage settings |
-| `GET/PUT /api/config/databasequery` | Database query timeout |
-| `GET/PUT /api/config/security` | Security settings |
-| `GET/PUT /api/config/https` | HTTPS settings |
-| `GET/PUT /api/config/reportsharing` | Report sharing |
+| `POST /api/reportsharing/reports` | Save a report |
+| `GET /api/reportsharing/reports` | List reports |
+| `GET /api/reportsharing/reports/{reportId}` | Retrieve a report |
+| `DELETE /api/reportsharing/reports/{reportId}` | Delete a report |
 
-These endpoints support partial updates. Indexes are managed under
-`/api/indexes`, including create/edit, reload, enable/disable, and field-mapping
-operations. Check `GET /api/indexes` and its status responses to confirm an
-index loaded successfully.
+---
 
-Runtime updates may be persisted under `General:DataFolder` and can take
-precedence over values in `appsettings.json` after restart. Index definitions
-created or changed through the API are persisted in `indexes.json`. If a value
-does not match `appsettings.json`, inspect the persisted settings in the data
-folder. Security credentials and the HTTPS PFX password are not persisted or
-returned by their settings APIs.
+## 🔄 Manage and Verify Indexes
 
-## Troubleshooting
-
-| Symptom | Check |
+| Endpoint | Purpose |
 |---|---|
-| Pivot request returns 404 for an index | Confirm the `index` name matches an entry in `DataServer:Indexes`, or correct `DefaultIndexId`. |
-| Pivot request returns 423 | The selected index is disabled; set `Enabled` to `true` or enable it through the index API. |
-| Pivot request returns 502 or index status is `Failed` | Check the source path, database connection, query, and server logs; confirm the index has loaded. |
-| Browser reports a CORS error | Set `Security:CORS:AllowOrigin` to the page origin, including scheme and port but no path. |
-| Client cannot reach the server | Confirm the server is running, the port in `General:Port` matches the client URL, and HTTPS is used if enabled. |
-| Fields are missing or have unexpected types | Check source column names and configure `MappingEnabled` / `FieldMappings` where necessary. |
-| Settings appear to revert after restart | Check the persisted configuration files under `General:DataFolder`, which may override `appsettings.json`. |
+| `GET /api/indexes` | List indexes and status |
+| `GET /api/indexes/{index}` | Get one index status |
+| `POST /api/indexes` | Create an index |
+| `PUT /api/indexes/{index}` | Update an index |
+| `POST /api/indexes/{index}/reload` | Reload an index |
+| `POST /api/indexes/{index}/enable` | Enable an index |
+| `POST /api/indexes/{index}/disable` | Disable an index |
+| `DELETE /api/indexes/{index}` | Delete an index |
+
+When the server loads successfully, the index status is `Ready`.
+When an index is disabled, requests to that index return `HTTP 423`.
+
+---
+
+## 💻 Client-side Integration
+
+The client uses the Pivot Table in server mode. Set `mode` to `Server` and provide the `/api/pivot/post` endpoint.
+
+```ts
+import { PivotView } from '@syncfusion/ej2-pivotview';
+
+const pivotObj: PivotView = new PivotView({
+    dataSourceSettings: {
+        url: 'http://localhost:7800/api/pivot/post',
+        mode: 'Server',
+        rows: [{ name: 'Sector' }],
+        columns: [{ name: 'EnerType', caption: 'Energy Type' }],
+        values: [
+            { name: 'PowUnits', caption: 'Power Units' },
+            { name: 'ProCost', caption: 'Production Cost' }
+        ]
+    },
+    height: 500,
+    width: 1000,
+    showGroupingBar: true,
+    showFieldList: true
+});
+
+pivotObj.appendTo('#PivotTable');
+```
+
+Use field names that exist in the selected index.
+
+To use another configured index, add the index name to the URL:
+
+```ts
+const pivotObj: PivotView = new PivotView({
+    dataSourceSettings: {
+        url: 'http://localhost:7800/api/pivot/post?index=Data-Csv',
+        mode: 'Server',
+        rows: [{ name: 'Country' }],
+        columns: [{ name: 'Product' }],
+        values: [{ name: 'Sales', caption: 'Sales' }]
+    }
+});
+
+pivotObj.appendTo('#PivotTable');
+```
+
+If Basic Authentication is enabled, add the credentials securely at runtime:
+
+```ts
+beforeServiceInvoke: function (args: any) {
+    const credentials: string = getServerCredentials();
+
+    args.internalProperties = args.internalProperties || {};
+    args.internalProperties.headers = {
+        ...(args.internalProperties.headers || {}),
+        'Authorization': `Basic ${btoa(credentials)}`
+    };
+}
+```
+
+> ⚠️ Never hard-code server passwords in browser code.
+
+If HTTPS is enabled, use `https://` and the configured server port in the Pivot Table URL.
+
+---
+
+## 📚 Additional Samples
+
+- [TypeScript sample](./Samples/TypeScript)
+- [Angular sample](./Samples/Angular)
+- [React sample](./Samples/React)
+- [Vue sample](./Samples/Vue)
+- [ASP.NET Core sample](./Samples/Core)
+- [MVC sample](./Samples/MVC)
+- [PivotController source](./PivotController)
+
+---
+
+## 📜 Licensing
+
+Advanced Server Configuration uses commercial Syncfusion components and is subject to the Syncfusion End User License Agreement.
+
+**Free Community License** is available for qualifying users and organizations:
+
+- Annual gross revenue less than $1 million USD
+- Five or fewer developers
+- Ten or fewer employees
+
+**Paid licenses** are required for larger organizations or teams that exceed the Community License limits.
+
+- [Purchase Syncfusion products](https://www.syncfusion.com/sales/products)
+- [Start a 30-day free trial](https://www.syncfusion.com/downloads/essential-js2)
+- [Community License FAQ](https://www.syncfusion.com/products/communitylicense)
+- [Full Syncfusion EULA](https://www.syncfusion.com/eula/es/)
+
+© 2026 Syncfusion, Inc. All Rights Reserved.
+
+---
+
+## 🔗 Related Documentation
+
+- [Server-side Pivot Engine](https://ej2.syncfusion.com/documentation/pivotview/server-side-pivot-engine)
+- [Pivot Table getting started](https://ej2.syncfusion.com/documentation/pivotview/getting-started)
+- [dataSourceSettings API](https://ej2.syncfusion.com/documentation/api/pivotview/datasourcesettings)
+- [Server mode API](https://ej2.syncfusion.com/documentation/api/pivotview/datasourcesettingsmodel#mode)
+- [beforeServiceInvoke event](https://ej2.syncfusion.com/documentation/api/pivotview/beforeserviceinvokeeventargs)
